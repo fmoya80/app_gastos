@@ -10,7 +10,7 @@ st.title("💰 Registro de Gastos")
 # --- Entrada de datos ---
 monto = st.number_input("Monto", min_value=0.0, step=100.0, format="%.2f")
 nombre = st.text_input("Nombre del gasto")
-categoria = st.selectbox("Categoría", ["Comida", "Transporte", "Ocio", "Otros"])
+categoria = st.selectbox("Categoría", ["Comida", "Transporte", "Ocio", "Otros", 'Carrete'])
 
 # --- Guardar gasto ---
 if st.button("Registrar gasto"):
@@ -51,3 +51,4 @@ if st.checkbox("📋 Ver gastos registrados"):
 
     except FileNotFoundError:
         st.info("Aún no hay gastos registrados.")
+
