@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+import time
 
 # ---------- Config ----------
 st.set_page_config(page_title="Registro de Gastos", page_icon="💰", layout="centered")
@@ -110,7 +111,10 @@ with tab_registrar:
             }
             df = pd.concat([df, pd.DataFrame([nuevo])], ignore_index=True)
             guardar_df_gastos(df)
-            st.success("✅ Gasto registrado.")
+            msg = st.success("✅ Gasto registrado.")
+            time.sleep(5)
+            msg.empty()
+
             st.rerun()
         else:
             st.warning("Por favor ingresa un monto y nombre válido.")
@@ -190,7 +194,7 @@ with tab_categorias:
             if cols[1].button("🗑️", key=f"del_cat_{cat}", disabled=deshabilitar, help="Eliminar categoría"):
                 delete_categoria(usuario, cat)
                 st.success(f"✅ Categoría '{cat}' eliminada.")
+                time.sleep(5)
                 st.rerun()
     else:
         st.info("Aún no tienes categorías. Crea la primera arriba.")
-
