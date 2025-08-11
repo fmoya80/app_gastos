@@ -112,7 +112,7 @@ with tab_registrar:
             df = pd.concat([df, pd.DataFrame([nuevo])], ignore_index=True)
             guardar_df_gastos(df)
             msg = st.success("✅ Gasto registrado.")
-            time.sleep(5)
+            time.sleep(3)
             msg.empty()
 
             st.rerun()
@@ -180,6 +180,7 @@ with tab_categorias:
                 st.warning(error)
             else:
                 st.success(f"✅ Categoría '{nueva_cat}' creada.")
+                time.sleep(3)
                 st.rerun()
 
     st.caption("Tus categorías:")
@@ -194,7 +195,7 @@ with tab_categorias:
             if cols[1].button("🗑️", key=f"del_cat_{cat}", disabled=deshabilitar, help="Eliminar categoría"):
                 delete_categoria(usuario, cat)
                 st.success(f"✅ Categoría '{cat}' eliminada.")
-                time.sleep(5)
+                time.sleep(3)
                 st.rerun()
     else:
         st.info("Aún no tienes categorías. Crea la primera arriba.")
