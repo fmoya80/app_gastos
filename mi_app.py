@@ -4,7 +4,7 @@ from datetime import datetime
 
 # ---------- Config ----------
 st.set_page_config(page_title="Registro de Gastos", page_icon="💰", layout="centered")
-st.title("💰 Registro de Gastos con Pestañas")
+st.title("💰 Registro de Gastos")
 
 GASTOS_FILE = "gastos.csv"
 CATS_FILE = "categorias.csv"
@@ -193,3 +193,4 @@ with tab_categorias:
                 st.rerun()
     else:
         st.info("Aún no tienes categorías. Crea la primera arriba.")
+
