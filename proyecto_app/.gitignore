@@ -1,0 +1,6 @@
+# Credenciales y configuraciones sensibles
+credenciales_google_cloud.json
+
+# Configuración local
+.vscode/
+__pycache__/
