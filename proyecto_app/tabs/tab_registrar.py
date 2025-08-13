@@ -10,7 +10,13 @@ def render_tab(usuario: str):
         with col1:
             tipo = st.radio("tipo", ["Ingreso", "Gasto"], horizontal=True)
             monto = st.number_input("monto", min_value=0.0, step=100.0, format="%.0f")
-            categoria = st.selectbox("categoria", get_user_categories(usuario), key="cat_select_reg")
+            nonce = st.session_state.get("cat_nonce", 0)
+            categoria = st.selectbox(
+                "categoria",
+                get_user_categories(usuario),
+                key=f"cat_select_reg_{nonce}"  # <- cambia cuando cat_nonce cambia
+            )
+
         with col2:
             nombre = st.text_input("nombre")
             fecha_manual = st.checkbox("Usar fecha y hora manual")

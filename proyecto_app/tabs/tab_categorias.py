@@ -5,18 +5,17 @@ import time
 def render_tab(usuario: str):
     st.subheader("Gestionar categorías")
 
-    # Crear
     c1, c2 = st.columns([3, 1.2])
     with c1:
-        nueva_cat = st.text_input("Crear nueva categoría", placeholder="Ej: Salud, Educación, Suscripciones...")
+        nueva_cat = st.text_input("Crear nueva categoría", placeholder="Ej: Salud, Suscripciones...")
     with c2:
         if st.button("Agregar"):
-            error = add_category(usuario, nueva_cat)
-            if error:
-                st.warning(error)
+            ok, msg = add_category(usuario, nueva_cat)   # 👈 usa la tupla (ok, msg)
+            if not ok:
+                st.warning(msg)
             else:
-                st.success(f"✅ Categoría '{nueva_cat}' creada.")
-                time.sleep
+                st.success(f"✅ '{nueva_cat}' creada.")
+                st.session_state["cat_nonce"] = st.session_state.get("cat_nonce", 0) + 1
                 st.rerun()
 
     # Listado + borrar
@@ -31,9 +30,9 @@ def render_tab(usuario: str):
             cols[0].write(cat)
             deshabilitar = len(user_cats) <= 1
             if cols[1].button("🗑️", key=f"del_cat_{cat}", disabled=deshabilitar, help="Eliminar categoría"):
-                delete_category(usuario, cat)
-                st.success(f"✅ Categoría '{cat}' eliminada.")
-                time.sleep(1)
-                st.rerun()
+                if delete_category(usuario, cat):
+                    st.success(f"✅ '{cat}' eliminada.")
+                    st.session_state["cat_nonce"] = st.session_state.get("cat_nonce", 0) + 1
+                    st.rerun()
     else:
         st.info("Aún no tienes categorías. Crea la primera arriba.")
