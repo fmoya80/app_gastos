@@ -49,27 +49,22 @@ def _make_creds():
         return Credentials.from_service_account_file(CREDS_FILE, scopes=SCOPE)
 
 
-def _gc():
-    """Cliente gspread autorizado."""
+@st.cache_resource(show_spinner=False)
+def _gc_cached():
     return gspread.authorize(_make_creds())
 
-
-def _ws(sheet_name: str):
-    """
-    Devuelve la worksheet por nombre. Si no existe, la crea.
-    Evita fallar en import: se ejecuta solo cuando hace falta.
-    """
-    gc = _gc()
+@st.cache_resource(show_spinner=False)
+def _open_sheet_cached():
     try:
-        sh = gc.open_by_url(SPREADSHEET_URL)
+        return _gc_cached().open_by_url(SPREADSHEET_URL)
     except Exception as e:
         raise RuntimeError(
             "No se pudo abrir el Spreadsheet por URL.\n"
-            "- Verifica SPREADSHEET_URL (o variable SHEETS_URL)\n"
-            "- Comparte la hoja con la Service Account como Editor\n"
-            "- Habilita APIs de Sheets y Drive en GCP\n"
             f"Detalle: {e}"
         )
+
+def _ws(sheet_name: str):
+    sh = _open_sheet_cached()
     try:
         return sh.worksheet(sheet_name)
     except gspread.WorksheetNotFound:
@@ -95,39 +90,47 @@ def _df_to_sheet(ws, df: pd.DataFrame):
 
 
 # ========= Movimientos =========
+@st.cache_data(ttl=30, show_spinner=False)  # 30s
 def load_expenses() -> pd.DataFrame:
     ws = _ws("gastos")
     df = _sheet_to_df(ws, MOV_COLS)
-    # tipos/casts
     df["id_transaccion"] = df["id_transaccion"].astype(str)
     df["Monto"] = pd.to_numeric(df["Monto"], errors="coerce").fillna(0.0)
-    # migración si vinieran datos viejos sin 'Tipo'
     if "Tipo" not in df.columns:
         df["Tipo"] = "Gasto"
-        save_expenses(df)
+        save_expenses(df)  # regraba (ver C abajo limpia cache)
     return df
 
 
 def save_expenses(df: pd.DataFrame):
     ws = _ws("gastos")
     _df_to_sheet(ws, df[MOV_COLS])
+    try:
+        st.cache_data.clear()
+    except Exception:
+        pass
 
 
 def add_movement(usuario: str, fecha: str, monto: float, nombre: str, categoria: str, tipo: str):
     if tipo not in ("Gasto", "Ingreso"):
         tipo = "Gasto"
-    df = load_expenses()
-    nuevo = {
-        "id_transaccion": str(uuid.uuid4()),
-        "Usuario": usuario,
-        "Fecha": fecha,
-        "Monto": float(monto),
-        "Nombre": nombre,
-        "Categoría": categoria,
-        "Tipo": tipo,
-    }
-    df = pd.concat([df, pd.DataFrame([nuevo])], ignore_index=True)
-    save_expenses(df)
+
+    ws = _ws("gastos")
+    fila = [
+        str(uuid.uuid4()),
+        usuario,
+        fecha,
+        float(monto),
+        nombre,
+        categoria,
+        tipo,
+    ]
+    ws.append_row(fila, value_input_option="USER_ENTERED")
+
+    try:
+        st.cache_data.clear()
+    except Exception:
+        pass
 
 
 # Compat: si tu UI aún llama add_expense(...)
@@ -146,9 +149,13 @@ def delete_expense_by_id(mov_id: str) -> bool:
 
 
 # ========= Categorías =========
+@st.cache_data(ttl=300, show_spinner=False)  # 5 min
 def load_categories() -> pd.DataFrame:
     ws = _ws("categorias")
-    return _sheet_to_df(ws, CAT_COLS)
+    df = _sheet_to_df(ws, CAT_COLS)
+    df["Usuario"] = df["Usuario"].astype(str)
+    df["Categoría"] = df["Categoría"].astype(str)
+    return df
 
 
 def save_categories(df: pd.DataFrame):
