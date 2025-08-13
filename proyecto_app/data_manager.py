@@ -19,7 +19,7 @@ else:
 client = gspread.authorize(CREDS)
 
 # Abres tu Google Sheet
-SPREADSHEET_NAME = "nombre_de_tu_sheet"
+SPREADSHEET_NAME = "base_app_gastos"
 sheet_gastos = client.open(SPREADSHEET_NAME).worksheet("gastos")
 sheet_cats = client.open(SPREADSHEET_NAME).worksheet("categorias")
 
@@ -101,3 +101,4 @@ def delete_category(usuario, categoria):
     cats_df = load_categories()
     cats_df = cats_df[~((cats_df["Usuario"] == usuario) & (cats_df["Categoría"] == categoria))]
     save_categories(cats_df)
+
