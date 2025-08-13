@@ -1,5 +1,5 @@
 import streamlit as st
-from data_manager import load_expenses
+from data_manager import load_expenses, delete_expense_by_id
 from ui_helpers import money_fmt
 # si usabas render_expense_row, ahora mostramos columnas personalizadas para incluir Tipo
 
@@ -50,26 +50,17 @@ def render_tab(usuario: str):
     header[4].markdown("**Categoría**")
     header[5].markdown("**Acción**")
 
-    from data_manager import delete_expense_by_index
-    for idx, row in df_user.iterrows():
+    for _, row in df_user.iterrows():
         cols = st.columns([1.2, 2.0, 1.4, 2.6, 2.0, 1.0])
-        cols[0].write("🟢 Ingreso" if row["Tipo"] == "Ingreso" else "🔴 Gasto")
+        cols[0].write("🟢 Ingreso" if row["Tipo"]=="Ingreso" else "🔴 Gasto")
         cols[1].write(row["Fecha"])
-        monto_txt = f"+ {money_fmt(row['Monto'])}" if row["Tipo"] == "Ingreso" else f"- {money_fmt(row['Monto'])}"
+        monto_txt = f"+ {money_fmt(row['Monto'])}" if row["Tipo"]=="Ingreso" else f"- {money_fmt(row['Monto'])}"
         cols[2].write(monto_txt)
         cols[3].write(row["Nombre"])
         cols[4].write(row["Categoría"])
-        if cols[5].button("🗑️", key=f"del_{idx}", help="Eliminar este movimiento"):
-            if delete_expense_by_index(idx):
+        if cols[5].button("🗑️", key=f"del_{row['id_transaccion']}", help="Eliminar este movimiento"):
+            if delete_expense_by_id(row["id_transaccion"]):
                 st.success("✅ Movimiento eliminado.")
                 st.rerun()
             else:
-                st.error("No se pudo eliminar el movimiento.")
-
-    # Descarga solo del usuario (con filtros aplicados)
-    st.download_button(
-        label="⬇️ Descargar CSV (este usuario)",
-        data=df_user.to_csv(index=False),
-        file_name=f"movimientos_{usuario}.csv",
-        mime="text/csv"
-    )
+                st.error("No se pudo eliminar.")
