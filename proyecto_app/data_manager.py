@@ -163,46 +163,89 @@ def save_categories(df: pd.DataFrame):
     _df_to_sheet(ws, df[CAT_COLS])
 
 
+@st.cache_data(ttl=300, show_spinner=False)
+def _raw_categories():
+    ws = _ws("categorias")
+    # Leemos solo dos columnas y acotamos filas si quieres
+    values = ws.get_all_values()
+    return values  # [[Usuario, Categoría], ...]
+
 def get_user_categories(usuario: str):
-    cats_df = load_categories()
-    user_cats = cats_df[cats_df["Usuario"] == usuario]["Categoría"].dropna().unique().tolist()
+    values = _raw_categories()
+    if not values:
+        # Inicializa por defecto
+        ws = _ws("categorias")
+        ws.append_rows([[usuario, c] for c in DEFAULT_CATEGORIES], value_input_option="USER_ENTERED")
+        try:
+            st.cache_data.clear()
+        except Exception:
+            pass
+        return DEFAULT_CATEGORIES.copy()
+
+    header = values[0] if values else []
+    rows = values[1:] if len(values) > 1 else []
+
+    idx_user = header.index("Usuario") if "Usuario" in header else 0
+    idx_cat  = header.index("Categoría") if "Categoría" in header else 1
+
+    user_cats = [r[idx_cat] for r in rows if len(r) > idx_cat and r[idx_user] == usuario and r[idx_cat]]
     if not user_cats:
-        nuevos = pd.DataFrame([{"Usuario": usuario, "Categoría": c} for c in DEFAULT_CATEGORIES])
-        cats_df = pd.concat([cats_df, nuevos], ignore_index=True)
-        save_categories(cats_df)
-        user_cats = DEFAULT_CATEGORIES.copy()
-    return user_cats
+        ws = _ws("categorias")
+        ws.append_rows([[usuario, c] for c in DEFAULT_CATEGORIES], value_input_option="USER_ENTERED")
+        try:
+            st.cache_data.clear()
+        except Exception:
+            pass
+        return DEFAULT_CATEGORIES.copy()
+
+    # únicas y ordenadas
+    return sorted(list(dict.fromkeys([str(c) for c in user_cats])))
 
 
 def add_category(usuario: str, categoria: str):
-    """Agrega una categoría nueva para un usuario."""
-    categoria = categoria.strip()
-    if not categoria:
-        return False  # No agrega vacíos
+    cat = (categoria or "").strip()
+    if not cat:
+        return False, "Ingresa un nombre de categoría."
 
-    df = load_categories()
-    # Evitar duplicados exactos
-    if ((df["Usuario"] == usuario) & (df["Categoría"].str.lower() == categoria.lower())).any():
-        return False
+    df = load_categories()  # cacheada
+    # evitar duplicados (case-insensitive)
+    if ((df["Usuario"] == usuario) & (df["Categoría"].str.lower() == cat.lower())).any():
+        return False, f"La categoría '{cat}' ya existe."
 
-    # Append directo (sin leer otra vez)
     ws = _ws("categorias")
-    ws.append_row([usuario, categoria], value_input_option="USER_ENTERED")
+    ws.append_row([usuario, cat], value_input_option="USER_ENTERED")
 
-    try:
-        st.cache_data.clear()
-    except Exception:
-        pass
-
-    return True
+    _clear_category_caches()  # muy importante para que el selectbox vea el cambio
+    return True, ""
 
 
 def delete_category(usuario: str, categoria: str):
-    """Elimina una categoría de un usuario."""
     df = load_categories()
     before = len(df)
     df = df[~((df["Usuario"] == usuario) & (df["Categoría"] == categoria))]
     if len(df) < before:
-        save_categories(df)
+        save_categories(df)     # tu save_categories ya debería limpiar cache global o hazlo aquí
+        _clear_category_caches()  # <<<<<< IMPORTANTE
         return True
     return False
+
+# --- helpers de cache ---
+def _clear_cache_of(fn):
+    try:
+        fn.clear()
+    except Exception:
+        pass
+
+def _clear_category_caches():
+    # Limpia TODO lo que alimente categorías
+    _clear_cache_of(load_categories)
+    # Si tienes una función cacheada tipo _raw_categories(), límpiala también:
+    try:
+        _raw_categories.clear()
+    except Exception:
+        pass
+    # Si llegaste a cachear get_user_categories, límpiala:
+    try:
+        get_user_categories.clear()
+    except Exception:
+        pass
