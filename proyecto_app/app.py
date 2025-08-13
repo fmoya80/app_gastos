@@ -4,7 +4,7 @@ from tabs.tab_gastos import render_tab as tab_gastos
 from tabs.tab_categorias import render_tab as tab_categorias
 
 st.set_page_config(page_title="Registro de Gastos", page_icon="💰", layout="centered")
-st.title("💰 Registro de Gastos")
+st.title("💰 ¡Bienvenido!")
 
 usuario = st.text_input("👤 Nombre de usuario", placeholder="Ej: Felipe")
 if not usuario.strip():
@@ -21,3 +21,4 @@ with tab2:
 
 with tab3:
     tab_categorias(usuario)
+
