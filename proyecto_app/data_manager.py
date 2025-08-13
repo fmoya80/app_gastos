@@ -2,17 +2,24 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import pandas as pd
 import uuid
+from google.oauth2.service_account import Credentials
+import streamlit as st
 
-# ===== CONFIGURACIÓN =====
-SCOPE = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-CREDS_FILE = "credenciales_google_cloud.json"  # tu archivo descargado de Google Cloud
-SPREADSHEET_NAME = "base_app_gastos"
 
-# Conectar cliente
-creds = ServiceAccountCredentials.from_json_keyfile_name(CREDS_FILE, SCOPE)
-client = gspread.authorize(creds)
+SCOPE = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
 
-# Abrir documento
+# Detecta si estamos en Streamlit Cloud o en local
+if "gcp_service_account" in st.secrets:
+    # Método seguro en la nube
+    CREDS = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=SCOPE)
+else:
+    # Método local: usando archivo credenciales.json
+    CREDS = Credentials.from_service_account_file("credenciales.json", scopes=SCOPE)
+
+client = gspread.authorize(CREDS)
+
+# Abres tu Google Sheet
+SPREADSHEET_NAME = "nombre_de_tu_sheet"
 sheet_gastos = client.open(SPREADSHEET_NAME).worksheet("gastos")
 sheet_cats = client.open(SPREADSHEET_NAME).worksheet("categorias")
 
