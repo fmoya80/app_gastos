@@ -5,6 +5,11 @@ from data_manager import add_movement, get_user_categories
 def render_tab(usuario: str):
     st.subheader("Registrar movimiento")
 
+    # ⬅️ Botón de refresco (FUERA del form)
+    if st.button("🔄 Actualizar categorías"):
+        st.session_state["cat_nonce"] = st.session_state.get("cat_nonce", 0) + 1
+        st.rerun()
+
     with st.form("frm_registro", clear_on_submit=True):
         col1, col2 = st.columns(2)
         with col1:
