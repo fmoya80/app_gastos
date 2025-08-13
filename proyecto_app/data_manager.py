@@ -15,16 +15,16 @@ SCOPE = [
 ]
 
 # Ruta local por defecto (para tu .bat / entorno local)
-CREDS_FILE = os.getenv("GOOGLE_CREDS_FILE", "credenciales.json")
+CREDS_FILE = os.getenv("GOOGLE_CREDS_FILE", "credenciales_google_cloud.json")
 
 # Usa SIEMPRE la URL (más robusto que por nombre)
 SPREADSHEET_URL = os.getenv(
     "SHEETS_URL",
-    "https://docs.google.com/spreadsheets/d/TU_ID_DE_SPREADSHEET/edit"  # <-- Reemplaza
+    "https://docs.google.com/spreadsheets/d/1-YXU838TIBtGewGsWEb_zg96FeMVbTH21BJBYaATY7s/edit?pli=1&gid=0#gid=0"  # <-- Reemplaza
 )
 
 # Columnas esperadas
-MOV_COLS = ["Id", "Usuario", "Fecha", "Monto", "Nombre", "Categoría", "Tipo"]
+MOV_COLS = ["id_transaccion", "Usuario", "Fecha", "Monto", "Nombre", "Categoría", "Tipo"]
 CAT_COLS = ["Usuario", "Categoría"]
 DEFAULT_CATEGORIES = ["Comida", "Transporte", "Ocio", "Otros"]
 
@@ -99,7 +99,7 @@ def load_expenses() -> pd.DataFrame:
     ws = _ws("gastos")
     df = _sheet_to_df(ws, MOV_COLS)
     # tipos/casts
-    df["Id"] = df["Id"].astype(str)
+    df["id_transaccion"] = df["id_transaccion"].astype(str)
     df["Monto"] = pd.to_numeric(df["Monto"], errors="coerce").fillna(0.0)
     # migración si vinieran datos viejos sin 'Tipo'
     if "Tipo" not in df.columns:
@@ -118,7 +118,7 @@ def add_movement(usuario: str, fecha: str, monto: float, nombre: str, categoria:
         tipo = "Gasto"
     df = load_expenses()
     nuevo = {
-        "Id": str(uuid.uuid4()),
+        "id_transaccion": str(uuid.uuid4()),
         "Usuario": usuario,
         "Fecha": fecha,
         "Monto": float(monto),
@@ -135,10 +135,10 @@ def add_expense(usuario: str, fecha: str, monto: float, nombre: str, categoria: 
     add_movement(usuario, fecha, monto, nombre, categoria, "Gasto")
 
 
-def delete_movement_by_id(mov_id: str) -> bool:
+def delete_expense_by_id(mov_id: str) -> bool:
     df = load_expenses()
     before = len(df)
-    df = df[df["Id"].astype(str) != str(mov_id)]
+    df = df[df["id_transaccion"].astype(str) != str(mov_id)]
     if len(df) < before:
         save_expenses(df)
         return True
