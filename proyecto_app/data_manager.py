@@ -175,21 +175,34 @@ def get_user_categories(usuario: str):
 
 
 def add_category(usuario: str, categoria: str):
-    categoria = str(categoria or "").strip()
+    """Agrega una categoría nueva para un usuario."""
+    categoria = categoria.strip()
     if not categoria:
-        return "La categoría no puede estar vacía."
-    cats_df = load_categories()
-    existe = not cats_df[
-        (cats_df["Usuario"] == usuario) & (cats_df["Categoría"].str.lower() == categoria.lower())
-    ].empty
-    if existe:
-        return "Esa categoría ya existe."
-    cats_df = pd.concat([cats_df, pd.DataFrame([{"Usuario": usuario, "Categoría": categoria}])], ignore_index=True)
-    save_categories(cats_df)
-    return None
+        return False  # No agrega vacíos
+
+    df = load_categories()
+    # Evitar duplicados exactos
+    if ((df["Usuario"] == usuario) & (df["Categoría"].str.lower() == categoria.lower())).any():
+        return False
+
+    # Append directo (sin leer otra vez)
+    ws = _ws("categorias")
+    ws.append_row([usuario, categoria], value_input_option="USER_ENTERED")
+
+    try:
+        st.cache_data.clear()
+    except Exception:
+        pass
+
+    return True
 
 
 def delete_category(usuario: str, categoria: str):
-    cats_df = load_categories()
-    cats_df = cats_df[~((cats_df["Usuario"] == usuario) & (cats_df["Categoría"] == categoria))]
-    save_categories(cats_df)
+    """Elimina una categoría de un usuario."""
+    df = load_categories()
+    before = len(df)
+    df = df[~((df["Usuario"] == usuario) & (df["Categoría"] == categoria))]
+    if len(df) < before:
+        save_categories(df)
+        return True
+    return False
