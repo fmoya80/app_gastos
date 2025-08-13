@@ -1,6 +1,6 @@
 import streamlit as st
 from datetime import datetime, date
-from data_manager import add_expense, get_user_categories
+from data_manager import add_movement, get_user_categories
 import time
 
 def render_tab(usuario: str):
@@ -21,7 +21,7 @@ def render_tab(usuario: str):
     if st.button("Registrar", type="primary"):
         if monto > 0 and nombre.strip():
             fecha_val = fecha if fecha else datetime.now().strftime("%Y-%m-%d %H:%M")
-            add_expense(usuario, fecha_val, monto, nombre, categoria, tipo)
+            add_movement(usuario, fecha_val, monto, nombre, categoria, tipo)
             st.success("✅ Movimiento registrado.")
             time.sleep(1)
             st.rerun()
